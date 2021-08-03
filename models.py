@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class SimpleFlatter(nn.Module):
@@ -10,36 +11,43 @@ class SimpleFlatter(nn.Module):
         pass
 
 
-class CNN(nn.Module):
+class FeatureExtractor(nn.Module):
     def __init__(self):
-        super(CNN, self).__init__()
+        super().__init__()
 
-        self.convlayer1 = nn.Sequential(
-            nn.Conv2d(1, 32, 3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2)
-        )
+        self.block1 = nn.Sequential(nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
+                                    nn.ReLU(),
+                                    nn.MaxPool2d(kernel_size=2, stride=2))
 
-        self.convlayer2 = nn.Sequential(
-            nn.Conv2d(32, 64, 3),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.MaxPool2d(2)
-        )
+        self.block2 = nn.Sequential(nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+                                    nn.ReLU(),
+                                    nn.MaxPool2d(kernel_size=2, stride=2))
 
-        self.fc1 = nn.Linear(64 * 6 * 6, 600)
-        self.drop = nn.Dropout2d(0.25)
-        self.fc2 = nn.Linear(600, 120)
-        self.fc3 = nn.Linear(120, 10)
+        self.block3 = nn.Sequential(nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+                                    nn.ReLU(),
+                                    nn.MaxPool2d(kernel_size=2, stride=2, padding=1))
+
+        self.block4 = nn.Sequential(nn.Conv2d(128, 128, (1, 1)))
+        self.last_relu = nn.ReLU()
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
 
     def forward(self, x):
-        x = self.convlayer1(x)
-        x = self.convlayer2(x)
-        x = x.view(-1, 64 * 6 * 6)
-        x = self.fc1(x)
-        x = self.drop(x)
-        x = self.fc2(x)
-        x = self.fc3(x)
+        x = self.block1(x)
+        x = self.block2(x)
+        x = self.block3(x)
+        x = self.block4(x)
+        x = self.last_relu(x)
 
-        return F.log_softmax(x, dim=1)
+        x = self.avg_pool(x)
+        x = x.view(-1, 128)
+
+        return F.normalize(x)
+
+
+class Classifier(nn.Module):
+    def __init__(self, in_feature_size=128, num_classes=10):
+        super().__init__()
+        self.classifier = nn.Linear(in_feature_size, num_classes)
+
+    def forward(self, x):
+        return self.classifier(x)
