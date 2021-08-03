@@ -1,3 +1,4 @@
+colour==0.1.5
 ipython-unittest==0.3.1
 jupyter==1.0.0
 jupyter-dojo==0.3.2
