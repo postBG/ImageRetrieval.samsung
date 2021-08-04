@@ -1,5 +1,5 @@
 import torch
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 
 from vector_search import kNN_search
 
