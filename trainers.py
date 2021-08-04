@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 
 from utils import AverageMeterSet
 
